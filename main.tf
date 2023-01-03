@@ -1,5 +1,4 @@
 locals {
-  prefix = "MyOrg"
   default_tags = {
     Project  = ""
     Solution = ""
@@ -8,7 +7,7 @@ locals {
 
 module "connectivity_rg" {
   source   = "../terraform-azure-alz-resource-group"
-  name     = "${local.prefix}-Connectivity"
+  name     = "Connectivity"
   location = "uksouth"
   tags     = local.default_tags
   providers = {
@@ -17,7 +16,7 @@ module "connectivity_rg" {
 }
 
 resource "azurerm_virtual_wan" "vwan" {
-  name                           = "${local.prefix}-VWAN-01"
+  name                           = "${local.prefix}-vwan"
   resource_group_name            = module.connectivity_rg.name
   location                       = "uksouth"
   allow_branch_to_branch_traffic = true
@@ -29,6 +28,7 @@ resource "azurerm_firewall_policy" "policy" {
   name                = "main"
   resource_group_name = module.connectivity_rg.name
   location            = "uksouth"
+  sku                 = "Premium"
   tags                = local.default_tags
 }
 
@@ -51,3 +51,17 @@ module "secure_virtual_hub_ukwest" {
   firewall_policy_id  = azurerm_firewall_policy.policy.id
   tags                = local.default_tags
 }
+
+# output "vhub_ukwest" {
+#   value = module.secure_virtual_hub_ukwest.default_route_table_id
+# }
+
+# resource "azurerm_virtual_hub_route_table_route" "secure" {
+#   route_table_id = module.secure_virtual_hub_ukwest.default_route_table_id
+
+#   name              = "all_traffic"
+#   destinations_type = "CIDR"
+#   destinations      = ["0.0.0.0/0","10.0.0.0/8","172.16.0.0/12","192.168.0.0/16"]
+#   next_hop_type     = "ResourceId"
+#   next_hop          =  module.secure_virtual_hub_ukwest.firewall_id
+# }
